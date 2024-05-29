@@ -1,4 +1,5 @@
 name: Install Self
+description: Install self in action PATH
 inputs:
   version:
     description: 'release version to install'
@@ -6,23 +7,22 @@ inputs:
     default: latest
     
 runs:
-  install:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cache self
-        id: cached-self
-        uses: actions/cache@v4
-        with:
-          path: /tmp/var/task/
-          key: ${{ runner.os }}-${{ runner.arch }}-self-${{ inputs.version }}
-      
-      - name: Install self
-        if: steps.cached-self.outputs.cache-hit != 'true'
-        run: |
-          mkdir -p /tmp/var/task
-          docker create --name self ghcr.io/linecard/self:${{ inputs.version }}
-          docker cp self:/ko-app/self /tmp/var/task/self
-          docker rm self
-      
-      - name: Append self to PATH
-        run: echo "/tmp/var/task/" >> $GITHUB_PATH
+  using: composite
+  steps:
+    - name: Cache self
+      id: cached-self
+      uses: actions/cache@v4
+      with:
+        path: /tmp/var/task/
+        key: ${{ runner.os }}-${{ runner.arch }}-self-${{ inputs.version }}
+    
+    - name: Install self
+      if: steps.cached-self.outputs.cache-hit != 'true'
+      run: |
+        mkdir -p /tmp/var/task
+        docker create --name self ghcr.io/linecard/self:${{ inputs.version }}
+        docker cp self:/ko-app/self /tmp/var/task/self
+        docker rm self
+    
+    - name: Append self to PATH
+      run: echo "/tmp/var/task/" >> $GITHUB_PATH
